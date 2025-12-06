@@ -7,10 +7,8 @@ const Index = () => {
       {/* Header */}
       <header className="border-b border-border bg-card shadow-sm">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 items-center justify-center">
-              <img src={bankJatimLogo} alt="Bank Jatim" className="h-10 w-auto" />
-            </div>
+          <div className="flex items-center gap-4">
+            <img src={bankJatimLogo} alt="Bank Jatim" className="h-8 w-auto object-contain" />
             <div>
               <h1 className="text-xl font-bold text-foreground">IP Threat Monitor</h1>
               <p className="text-sm text-muted-foreground">Real-time IP abuse detection dashboard</p>
