@@ -102,51 +102,20 @@ export function IPDashboard() {
 
       for (let slideIndex = 0; slideIndex < totalSlides; slideIndex++) {
         const slide = pptx.addSlide();
-        
-        // Header background
-        slide.addShape("rect", {
-          x: 0,
-          y: 0,
-          w: "100%",
-          h: 0.8,
-          fill: { color: "E65100" },
-        });
-
-        // Title
-        slide.addText("THREAT HUNTING - IP Intelligence", {
-          x: 0.5,
-          y: 0.2,
-          w: 8,
-          h: 0.4,
-          fontSize: 24,
-          bold: true,
-          color: "FFFFFF",
-          fontFace: "Arial",
-        });
-
-        // Source
-        slide.addText("Source: IP Threat Monitor", {
-          x: 0.5,
-          y: 0.5,
-          w: 6,
-          h: 0.3,
-          fontSize: 14,
-          color: "FFFFFF",
-          fontFace: "Arial",
-        });
+        slide.background = { color: "FFFFFF" };
 
         // Get screenshots for this slide
         const startIdx = slideIndex * CARDS_PER_SLIDE;
         const endIdx = Math.min(startIdx + CARDS_PER_SLIDE, screenshots.length);
         const slideScreenshots = screenshots.slice(startIdx, endIdx);
 
-        // Card dimensions and positions (4 columns x 2 rows)
-        const cardWidth = 3.0;
-        const cardHeight = 2.3;
-        const startX = 0.4;
-        const startY = 1.0;
-        const gapX = 0.25;
-        const gapY = 0.2;
+        // Card dimensions and positions (4 columns x 2 rows) - larger and proportional
+        const cardWidth = 3.15;
+        const cardHeight = 3.3;
+        const startX = 0.25;
+        const startY = 0.25;
+        const gapX = 0.15;
+        const gapY = 0.15;
 
         slideScreenshots.forEach((screenshot, idx) => {
           const row = Math.floor(idx / CARDS_PER_ROW);
@@ -161,49 +130,6 @@ export function IPDashboard() {
             w: cardWidth,
             h: cardHeight,
           });
-        });
-
-        // Summary section
-        slide.addShape("rect", {
-          x: 0.4,
-          y: 5.8,
-          w: 12.5,
-          h: 0.7,
-          fill: { color: "FFF3E0" },
-          line: { color: "E65100", width: 1 },
-        });
-
-        slide.addText("SUMMARY", {
-          x: 0.6,
-          y: 5.9,
-          w: 2,
-          h: 0.25,
-          fontSize: 12,
-          bold: true,
-          color: "333333",
-          fontFace: "Arial",
-        });
-
-        slide.addText("Berikut merupakan source IP yang terdeteksi bad reputation.", {
-          x: 0.6,
-          y: 6.15,
-          w: 11,
-          h: 0.25,
-          fontSize: 11,
-          color: "666666",
-          fontFace: "Arial",
-        });
-
-        // Page number
-        slide.addText(`| Page ${slideIndex + 1}`, {
-          x: 11.5,
-          y: 7.1,
-          w: 1.5,
-          h: 0.3,
-          fontSize: 10,
-          color: "666666",
-          fontFace: "Arial",
-          align: "right",
         });
       }
 
