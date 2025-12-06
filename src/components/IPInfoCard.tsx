@@ -54,12 +54,11 @@ export const IPInfoCard = forwardRef<HTMLDivElement, IPInfoCardProps>(({ data },
       <div className="bg-card px-6 py-4">
         <div className="space-y-3">
           <InfoRow label="ISP" value={data.ISP} />
+          <InfoRow label="Usage Type" value={data.UsageType} />
+          <InfoRow label="ASN" value={data.ASN} />
           <InfoRow label="Domain Name" value={data.Domain} isLink />
           <InfoRow label="Country" value={`🇮🇩 ${data.Country}`} />
           <InfoRow label="City" value={data.City} />
-          <InfoRow label="ASN" value={data.ASN} />
-          <InfoRow label="Usage Type" value={data.UsageType} />
-          <InfoRow label="Last Reported" value={formatDate(data.LastReportedAt)} />
         </div>
       </div>
 
