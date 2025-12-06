@@ -1,12 +1,13 @@
 import { useEffect, useState, useRef, createRef, useCallback } from "react";
 import html2canvas from "html2canvas";
+import pptxgen from "pptxgenjs";
 import { fetchIPData } from "@/services/googleSheetService";
 import { IPData } from "@/types/ipData";
 import { IPInfoCard } from "./IPInfoCard";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { Skeleton } from "./ui/skeleton";
-import { Search, Shield, AlertTriangle, RefreshCw, Download, Pause, Play } from "lucide-react";
+import { Search, Shield, AlertTriangle, RefreshCw, Download, Pause, Play, FileSliders } from "lucide-react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 
@@ -20,6 +21,7 @@ export function IPDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "blocked" | "alerted">("all");
   const [downloading, setDownloading] = useState(false);
+  const [generatingPPT, setGeneratingPPT] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const cardRefs = useRef<Map<string, React.RefObject<HTMLDivElement>>>(new Map());
@@ -63,6 +65,157 @@ export function IPDashboard() {
       toast.error("Failed to download some screenshots");
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleGeneratePPT = async () => {
+    if (uniqueHighRiskIPs.length === 0) {
+      toast.error("No high risk IPs to generate PPT");
+      return;
+    }
+
+    setGeneratingPPT(true);
+    toast.info(`Generating PPT with ${uniqueHighRiskIPs.length} unique high risk IPs...`);
+
+    try {
+      const pptx = new pptxgen();
+      pptx.layout = "LAYOUT_WIDE";
+      pptx.title = "IP Threat Report";
+      pptx.author = "IP Threat Monitor";
+
+      const CARDS_PER_SLIDE = 8;
+      const CARDS_PER_ROW = 4;
+      const totalSlides = Math.ceil(uniqueHighRiskIPs.length / CARDS_PER_SLIDE);
+
+      // Capture all screenshots first
+      const screenshots: { ip: string; dataUrl: string }[] = [];
+      for (const ip of uniqueHighRiskIPs) {
+        const ref = cardRefs.current.get(ip.IP);
+        if (ref?.current) {
+          const canvas = await html2canvas(ref.current, {
+            backgroundColor: "#ffffff",
+            scale: 1.5,
+          });
+          screenshots.push({ ip: ip.IP, dataUrl: canvas.toDataURL("image/png") });
+        }
+      }
+
+      for (let slideIndex = 0; slideIndex < totalSlides; slideIndex++) {
+        const slide = pptx.addSlide();
+        
+        // Header background
+        slide.addShape("rect", {
+          x: 0,
+          y: 0,
+          w: "100%",
+          h: 0.8,
+          fill: { color: "E65100" },
+        });
+
+        // Title
+        slide.addText("THREAT HUNTING - IP Intelligence", {
+          x: 0.5,
+          y: 0.2,
+          w: 8,
+          h: 0.4,
+          fontSize: 24,
+          bold: true,
+          color: "FFFFFF",
+          fontFace: "Arial",
+        });
+
+        // Source
+        slide.addText("Source: IP Threat Monitor", {
+          x: 0.5,
+          y: 0.5,
+          w: 6,
+          h: 0.3,
+          fontSize: 14,
+          color: "FFFFFF",
+          fontFace: "Arial",
+        });
+
+        // Get screenshots for this slide
+        const startIdx = slideIndex * CARDS_PER_SLIDE;
+        const endIdx = Math.min(startIdx + CARDS_PER_SLIDE, screenshots.length);
+        const slideScreenshots = screenshots.slice(startIdx, endIdx);
+
+        // Card dimensions and positions (4 columns x 2 rows)
+        const cardWidth = 3.0;
+        const cardHeight = 2.3;
+        const startX = 0.4;
+        const startY = 1.0;
+        const gapX = 0.25;
+        const gapY = 0.2;
+
+        slideScreenshots.forEach((screenshot, idx) => {
+          const row = Math.floor(idx / CARDS_PER_ROW);
+          const col = idx % CARDS_PER_ROW;
+          const x = startX + col * (cardWidth + gapX);
+          const y = startY + row * (cardHeight + gapY);
+
+          slide.addImage({
+            data: screenshot.dataUrl,
+            x,
+            y,
+            w: cardWidth,
+            h: cardHeight,
+          });
+        });
+
+        // Summary section
+        slide.addShape("rect", {
+          x: 0.4,
+          y: 5.8,
+          w: 12.5,
+          h: 0.7,
+          fill: { color: "FFF3E0" },
+          line: { color: "E65100", width: 1 },
+        });
+
+        slide.addText("SUMMARY", {
+          x: 0.6,
+          y: 5.9,
+          w: 2,
+          h: 0.25,
+          fontSize: 12,
+          bold: true,
+          color: "333333",
+          fontFace: "Arial",
+        });
+
+        slide.addText("Berikut merupakan source IP yang terdeteksi bad reputation.", {
+          x: 0.6,
+          y: 6.15,
+          w: 11,
+          h: 0.25,
+          fontSize: 11,
+          color: "666666",
+          fontFace: "Arial",
+        });
+
+        // Page number
+        slide.addText(`| Page ${slideIndex + 1}`, {
+          x: 11.5,
+          y: 7.1,
+          w: 1.5,
+          h: 0.3,
+          fontSize: 10,
+          color: "666666",
+          fontFace: "Arial",
+          align: "right",
+        });
+      }
+
+      // Download the PPT
+      const fileName = `IP-Threat-Report-${new Date().toISOString().split("T")[0]}.pptx`;
+      await pptx.writeFile({ fileName });
+      toast.success(`PPT generated successfully with ${totalSlides} slide(s)`);
+    } catch (error) {
+      console.error("Failed to generate PPT:", error);
+      toast.error("Failed to generate PPT");
+    } finally {
+      setGeneratingPPT(false);
     }
   };
 
@@ -221,6 +374,15 @@ export function IPDashboard() {
           >
             <Download className={`mr-2 h-4 w-4 ${downloading ? "animate-pulse" : ""}`} />
             Download ({uniqueHighRiskIPs.length})
+          </Button>
+          <Button 
+            variant="secondary" 
+            size="sm" 
+            onClick={handleGeneratePPT} 
+            disabled={loading || generatingPPT || uniqueHighRiskIPs.length === 0}
+          >
+            <FileSliders className={`mr-2 h-4 w-4 ${generatingPPT ? "animate-pulse" : ""}`} />
+            PPT ({uniqueHighRiskIPs.length})
           </Button>
           <Button 
             variant={autoRefresh ? "default" : "outline"} 
