@@ -1,5 +1,5 @@
 import { IPDashboard } from "@/components/IPDashboard";
-import { Shield } from "lucide-react";
+import bankJatimLogo from "@/assets/bank-jatim-logo.png";
 
 const Index = () => {
   return (
@@ -8,8 +8,8 @@ const Index = () => {
       <header className="border-b border-border bg-card shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-              <Shield className="h-6 w-6 text-primary-foreground" />
+            <div className="flex h-12 items-center justify-center">
+              <img src={bankJatimLogo} alt="Bank Jatim" className="h-10 w-auto" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-foreground">IP Threat Monitor</h1>
