@@ -24,20 +24,23 @@ export function IPDashboard() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const cardRefs = useRef<Map<string, React.RefObject<HTMLDivElement>>>(new Map());
 
-  // Get high risk IPs (score > 75)
+  // Get high risk IPs (score > 75) - unique IPs only
   const highRiskIPs = data.filter((d) => d.AbuseConfidenceScore > 75);
+  const uniqueHighRiskIPs = highRiskIPs.filter(
+    (item, index, self) => self.findIndex((t) => t.IP === item.IP) === index
+  );
 
   const handleDownloadAll = async () => {
-    if (highRiskIPs.length === 0) {
+    if (uniqueHighRiskIPs.length === 0) {
       toast.error("No high risk IPs to download");
       return;
     }
 
     setDownloading(true);
-    toast.info(`Downloading ${highRiskIPs.length} high risk IP reports...`);
+    toast.info(`Downloading ${uniqueHighRiskIPs.length} unique high risk IP reports...`);
 
     try {
-      for (const ip of highRiskIPs) {
+      for (const ip of uniqueHighRiskIPs) {
         const ref = cardRefs.current.get(ip.IP);
         if (ref?.current) {
           const canvas = await html2canvas(ref.current, {
@@ -54,7 +57,7 @@ export function IPDashboard() {
           await new Promise((resolve) => setTimeout(resolve, 300));
         }
       }
-      toast.success(`Downloaded ${highRiskIPs.length} IP reports`);
+      toast.success(`Downloaded ${uniqueHighRiskIPs.length} unique IP reports`);
     } catch (error) {
       console.error("Failed to download screenshots:", error);
       toast.error("Failed to download some screenshots");
@@ -214,10 +217,10 @@ export function IPDashboard() {
             variant="default" 
             size="sm" 
             onClick={handleDownloadAll} 
-            disabled={loading || downloading || highRiskIPs.length === 0}
+            disabled={loading || downloading || uniqueHighRiskIPs.length === 0}
           >
             <Download className={`mr-2 h-4 w-4 ${downloading ? "animate-pulse" : ""}`} />
-            Download ({highRiskIPs.length})
+            Download ({uniqueHighRiskIPs.length})
           </Button>
           <Button 
             variant={autoRefresh ? "default" : "outline"} 
