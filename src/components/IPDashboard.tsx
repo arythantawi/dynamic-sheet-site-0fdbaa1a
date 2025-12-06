@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, createRef } from "react";
+import { useEffect, useState, useRef, createRef, useCallback } from "react";
 import html2canvas from "html2canvas";
 import { fetchIPData } from "@/services/googleSheetService";
 import { IPData } from "@/types/ipData";
@@ -6,9 +6,11 @@ import { IPInfoCard } from "./IPInfoCard";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { Skeleton } from "./ui/skeleton";
-import { Search, Shield, AlertTriangle, RefreshCw, Download } from "lucide-react";
+import { Search, Shield, AlertTriangle, RefreshCw, Download, Pause, Play } from "lucide-react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
+
+const AUTO_REFRESH_INTERVAL = 10000; // 10 seconds
 
 export function IPDashboard() {
   const [data, setData] = useState<IPData[]>([]);
@@ -18,6 +20,8 @@ export function IPDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "blocked" | "alerted">("all");
   const [downloading, setDownloading] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const cardRefs = useRef<Map<string, React.RefObject<HTMLDivElement>>>(new Map());
 
   // Get high risk IPs (score > 75)
@@ -67,23 +71,36 @@ export function IPDashboard() {
     return cardRefs.current.get(ip)!;
   };
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     setError(null);
     try {
       const result = await fetchIPData();
       setData(result);
       setFilteredData(result);
+      setLastUpdated(new Date());
     } catch (err) {
       setError("Failed to load data from Google Sheet");
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
-  };
+  }, []);
 
+  // Initial load
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
+
+  // Auto-refresh every 10 seconds
+  useEffect(() => {
+    if (!autoRefresh) return;
+    
+    const interval = setInterval(() => {
+      loadData(false); // Don't show loading state for auto-refresh
+    }, AUTO_REFRESH_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, loadData]);
 
   useEffect(() => {
     let result = data;
@@ -202,11 +219,27 @@ export function IPDashboard() {
             <Download className={`mr-2 h-4 w-4 ${downloading ? "animate-pulse" : ""}`} />
             Download ({highRiskIPs.length})
           </Button>
-          <Button variant="outline" size="icon" onClick={loadData} disabled={loading}>
+          <Button 
+            variant={autoRefresh ? "default" : "outline"} 
+            size="icon" 
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            title={autoRefresh ? "Auto-refresh ON (10s)" : "Auto-refresh OFF"}
+          >
+            {autoRefresh ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          </Button>
+          <Button variant="outline" size="icon" onClick={() => loadData()} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
         </div>
       </div>
+
+      {/* Last Updated Info */}
+      {lastUpdated && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>Last updated: {lastUpdated.toLocaleTimeString('id-ID')}</span>
+          {autoRefresh && <span className="text-success">• Auto-refresh active</span>}
+        </div>
+      )}
 
       {/* IP Cards Grid */}
       {loading ? (
