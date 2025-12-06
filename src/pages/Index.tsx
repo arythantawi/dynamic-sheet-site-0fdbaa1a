@@ -1,5 +1,5 @@
 import { IPDashboard } from "@/components/IPDashboard";
-import bankJatimLogo from "@/assets/bank-jatim-logo.png";
+import newLogo from "@/assets/new-logo.png";
 
 const Index = () => {
   return (
@@ -8,7 +8,7 @@ const Index = () => {
       <header className="border-b border-border bg-card shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
-            <img src={bankJatimLogo} alt="Bank Jatim" className="h-8 w-auto object-contain" />
+            <img src={newLogo} alt="Logo" className="h-10 w-auto object-contain" />
             <div>
               <h1 className="text-xl font-bold text-foreground">IP Threat Monitor</h1>
               <p className="text-sm text-muted-foreground">Real-time IP abuse detection dashboard</p>
