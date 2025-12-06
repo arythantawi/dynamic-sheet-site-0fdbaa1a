@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, createRef } from "react";
+import html2canvas from "html2canvas";
 import { fetchIPData } from "@/services/googleSheetService";
 import { IPData } from "@/types/ipData";
 import { IPInfoCard } from "./IPInfoCard";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { Skeleton } from "./ui/skeleton";
-import { Search, Shield, AlertTriangle, RefreshCw } from "lucide-react";
+import { Search, Shield, AlertTriangle, RefreshCw, Download } from "lucide-react";
 import { Button } from "./ui/button";
+import { toast } from "sonner";
 
 export function IPDashboard() {
   const [data, setData] = useState<IPData[]>([]);
@@ -15,6 +17,55 @@ export function IPDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "blocked" | "alerted">("all");
+  const [downloading, setDownloading] = useState(false);
+  const cardRefs = useRef<Map<string, React.RefObject<HTMLDivElement>>>(new Map());
+
+  // Get high risk IPs (score > 75)
+  const highRiskIPs = data.filter((d) => d.AbuseConfidenceScore > 75);
+
+  const handleDownloadAll = async () => {
+    if (highRiskIPs.length === 0) {
+      toast.error("No high risk IPs to download");
+      return;
+    }
+
+    setDownloading(true);
+    toast.info(`Downloading ${highRiskIPs.length} high risk IP reports...`);
+
+    try {
+      for (const ip of highRiskIPs) {
+        const ref = cardRefs.current.get(ip.IP);
+        if (ref?.current) {
+          const canvas = await html2canvas(ref.current, {
+            backgroundColor: "#ffffff",
+            scale: 2,
+          });
+
+          const link = document.createElement("a");
+          link.download = `ip-report-${ip.IP}.png`;
+          link.href = canvas.toDataURL("image/png");
+          link.click();
+
+          // Small delay between downloads
+          await new Promise((resolve) => setTimeout(resolve, 300));
+        }
+      }
+      toast.success(`Downloaded ${highRiskIPs.length} IP reports`);
+    } catch (error) {
+      console.error("Failed to download screenshots:", error);
+      toast.error("Failed to download some screenshots");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  // Create refs for high risk IPs
+  const getCardRef = (ip: string) => {
+    if (!cardRefs.current.has(ip)) {
+      cardRefs.current.set(ip, createRef<HTMLDivElement>());
+    }
+    return cardRefs.current.get(ip)!;
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -142,6 +193,15 @@ export function IPDashboard() {
           >
             Alerted
           </Badge>
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={handleDownloadAll} 
+            disabled={loading || downloading || highRiskIPs.length === 0}
+          >
+            <Download className={`mr-2 h-4 w-4 ${downloading ? "animate-pulse" : ""}`} />
+            Download ({highRiskIPs.length})
+          </Button>
           <Button variant="outline" size="icon" onClick={loadData} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
@@ -158,7 +218,11 @@ export function IPDashboard() {
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
           {filteredData.map((item, index) => (
-            <IPInfoCard key={`${item.IP}-${index}`} data={item} />
+            <IPInfoCard 
+              key={`${item.IP}-${index}`} 
+              data={item} 
+              ref={item.AbuseConfidenceScore > 75 ? getCardRef(item.IP) : undefined}
+            />
           ))}
         </div>
       )}

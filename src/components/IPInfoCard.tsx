@@ -1,19 +1,16 @@
-import { useRef } from "react";
-import html2canvas from "html2canvas";
+import { forwardRef } from "react";
 import { IPData } from "@/types/ipData";
 import { ConfidenceBar } from "./ConfidenceBar";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { AlertTriangle, Shield, ExternalLink, Info, Download } from "lucide-react";
+import { AlertTriangle, Shield, ExternalLink, Info } from "lucide-react";
 
 interface IPInfoCardProps {
   data: IPData;
 }
 
-export function IPInfoCard({ data }: IPInfoCardProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
-
+export const IPInfoCard = forwardRef<HTMLDivElement, IPInfoCardProps>(({ data }, ref) => {
   const getActionBadge = (action: string) => {
     if (action.toLowerCase() === "blocked") {
       return <Badge variant="destructive">BLOCKED</Badge>;
@@ -28,43 +25,15 @@ export function IPInfoCard({ data }: IPInfoCardProps) {
     return { text: "Clean", icon: Shield, class: "text-success" };
   };
 
-  const handleDownload = async () => {
-    if (!cardRef.current) return;
-
-    try {
-      const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-      });
-
-      const link = document.createElement("a");
-      link.download = `ip-report-${data.IP}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-    } catch (error) {
-      console.error("Failed to capture screenshot:", error);
-    }
-  };
-
   const status = getScoreStatus(data.AbuseConfidenceScore);
-  const StatusIcon = status.icon;
-  const isHighRisk = data.AbuseConfidenceScore > 75;
 
   return (
-    <Card ref={cardRef} className="overflow-hidden border-0 shadow-lg">
+    <Card ref={ref} className="overflow-hidden border-0 shadow-lg">
       {/* Header */}
       <div className="border-b border-border bg-card px-6 py-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-danger">
-            {data.IP} <span className="text-foreground font-normal">was found in our database!</span>
-          </h2>
-          {isHighRisk && (
-            <Button variant="outline" size="sm" onClick={handleDownload}>
-              <Download className="mr-2 h-4 w-4" />
-              Download
-            </Button>
-          )}
-        </div>
+        <h2 className="text-xl font-semibold text-danger">
+          {data.IP} <span className="text-foreground font-normal">was found in our database!</span>
+        </h2>
       </div>
 
       {/* Confidence Section */}
@@ -112,7 +81,9 @@ export function IPInfoCard({ data }: IPInfoCardProps) {
       </div>
     </Card>
   );
-}
+});
+
+IPInfoCard.displayName = "IPInfoCard";
 
 function InfoRow({
   label,
