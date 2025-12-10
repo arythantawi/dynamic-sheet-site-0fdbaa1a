@@ -59,9 +59,9 @@ export async function fetchIPData(): Promise<IPData[]> {
           JenisAktivitas: values[8] || '',
           Count: parseInt(values[9]) || 0,
           Action: values[10] || '',
-          UsageType: values[13] || '-',
-          ASN: values[14] || '-',
-          City: values[15] || '-',
+          UsageType: values[11] || '-',
+          ASN: values[12] || '-',
+          City: values[13] || '-',
         };
 
         data.push(item);
