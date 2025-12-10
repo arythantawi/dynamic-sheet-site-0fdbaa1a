@@ -83,8 +83,8 @@ export function IPDashboard() {
       pptx.title = "IP Threat Report";
       pptx.author = "IP Threat Monitor";
 
-      const CARDS_PER_SLIDE = 8;
-      const CARDS_PER_ROW = 4;
+      const CARDS_PER_SLIDE = 6;
+      const CARDS_PER_ROW = 3;
       const totalSlides = Math.ceil(uniqueHighRiskIPs.length / CARDS_PER_SLIDE);
 
       // Capture all screenshots first
@@ -110,10 +110,10 @@ export function IPDashboard() {
         const slideScreenshots = screenshots.slice(startIdx, endIdx);
 
         // Card dimensions and positions (4 columns x 2 rows) - larger and proportional
-        const cardWidth = 3.15;
-        const cardHeight = 3.3;
-        const startX = 0.25;
-        const startY = 0.25;
+        const cardWidth = 4.3;
+        const cardHeight = 3.26;
+        const startX = 0.15;
+        const startY = 0.15;
         const gapX = 0.15;
         const gapY = 0.15;
 
